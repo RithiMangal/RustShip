@@ -24,7 +24,7 @@ struct Metadata {
     encrypted: bool,
 }
 
-// ---- ஸ்டெகனோகிராபி முக்கிய லாஜிக் (Core Logic) ----
+// ---- Core Logic Block ----
 fn xor_crypt(data: &[u8], password: &str) -> Vec<u8> {
     if password.is_empty() { return data.to_vec(); }
     let mut hasher = Sha256::new();
@@ -116,18 +116,18 @@ fn decompress_data(compressed_data: &[u8], output_dir: &str) -> Result<(usize, u
     Ok((file_count, folder_count))
 }
 
-// ---- GUI அப்ளிகேஷன் கட்டமைப்பு (GUI App Structure) ----
+// ---- GUI App Framework ----
 struct InvisibleSecretsApp {
-    // Embed செய்யத் தேவையானவை
+    // Embed states
     carrier_path: String,
     files_to_hide: Vec<PathBuf>,
     output_path: String,
     password_embed: String,
-    // Extract செய்யத் தேவையானவை
+    // Extract states
     stego_path: String,
     extract_dir: String,
     password_extract: String,
-    // அவுட்புட் மெசேஜ் லாக்
+    // Logs
     status_text: String,
 }
 
@@ -141,21 +141,20 @@ impl Default for InvisibleSecretsApp {
             stego_path: String::new(),
             extract_dir: String::new(),
             password_extract: String::new(),
-            status_text: "Ready - Select fields to start embedding or extracting.".to_string(),
+            status_text: "Ready - Select a mode to begin.".to_string(),
         }
     }
 }
 
 impl eframe::App for InvisibleSecretsApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // அழகான டார்க் தீம் செட்டிங்
+        // Apply beautiful dark styling
         ctx.set_visuals(egui::Visuals::dark());
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("🚀 INVISIBLE SECRETS v2.0 (RUST GUI)");
             ui.separator();
 
-            // 1. EMBED PANEL
             egui::Window::new("Embed Mode (Hide Files)").resizable(false).show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     ui.label("Carrier File:");
@@ -231,3 +230,5 @@ impl eframe::App for InvisibleSecretsApp {
                                             }
                                             Err(e) => self.status_text = format!("❌ File Create Error: {}", e),
                                         }
+                                    }
+                                    Err(e) => self.status_text = format!("❌ Compression Error: {}", e),
