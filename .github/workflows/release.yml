@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            exe: invisible-secrets.exe
+
+          - name: linux-x64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            exe: invisible-secrets
+
+          - name: macos-x64
+            os: macos-latest
+            target: x86_64-apple-darwin
+            exe: invisible-secrets
+
+          - name: macos-arm64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            exe: invisible-secrets
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p dist
+
+          cp "target/${{ matrix.target }}/release/${{ matrix.exe }}" \
+             "dist/${{ matrix.name }}-${{ matrix.exe }}"
+
+          cd dist
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            7z a "../${{ matrix.name }}.zip" \
+              "${{ matrix.name }}-${{ matrix.exe }}"
+          else
+            tar -czf "../${{ matrix.name }}.tar.gz" \
+              "${{ matrix.name }}-${{ matrix.exe }}"
+          fi
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ matrix.name }}.zip
+            ${{ matrix.name }}.tar.gz
